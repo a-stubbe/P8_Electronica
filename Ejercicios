@@ -1,0 +1,178 @@
+/*Código 1: Programa con main explícito*/
+/* Programa con main explícito */
+
+void setup() {
+  // Configuramos la patilla 13 como salida
+  pinMode(13, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(13, HIGH);
+  delay(1000);
+  digitalWrite(13, LOW);
+  delay(1000);
+}
+
+// Función main "oculta" en Arduino (explicita para el ejercicio)
+int main() {
+  init();         // Inicializa el hardware del Arduino
+  setup();        // Llama a la configuración inicial
+  while (1) {     // Bucle infinito que ejecuta loop()
+    loop();
+  }
+  return 0;       // Nunca se alcanza
+}
+
+
+/*Código 2: Primer circuito en Arduino (LED parpadeando a 1 Hz)*/
+
+void setup() {
+  pinMode(13, OUTPUT);  // Configura la patilla 13 como salida
+}
+
+void loop() {
+  digitalWrite(13, HIGH);  // Enciende el LED
+  delay(500);              // Espera 500 ms
+  digitalWrite(13, LOW);   // Apaga el LED
+  delay(500);              // Espera 500 ms
+}
+
+
+/*Código 3: Dos LED con frecuencias independientes usando millis()*/
+
+const int PIN_LED_ONBOARD = 13;   // LED integrado en la placa
+const int PIN_LED_EXTERNO = 8;      // LED montado en la placa de inserción
+
+// Periodos en milisegundos para cambio de estado
+const unsigned long periodoOnboard = 1000;   // Cambio cada 1000 ms -> periodo total 2000 ms (0,5 Hz)
+const unsigned long periodoExterno = 500;      // Cambio cada 500 ms -> periodo total 1000 ms (1 Hz)
+
+unsigned long tiempoPrevioOnboard = 0;
+unsigned long tiempoPrevioExterno = 0;
+
+int estadoOnboard = LOW;
+int estadoExterno = LOW;
+
+void setup() {
+  pinMode(PIN_LED_ONBOARD, OUTPUT);
+  pinMode(PIN_LED_EXTERNO, OUTPUT);
+}
+
+void loop() {
+  unsigned long tiempoActual = millis();
+
+  // Control del LED integrado (0,5 Hz)
+  if (tiempoActual - tiempoPrevioOnboard >= periodoOnboard) {
+    tiempoPrevioOnboard = tiempoActual;
+    estadoOnboard = (estadoOnboard == LOW) ? HIGH : LOW;
+    digitalWrite(PIN_LED_ONBOARD, estadoOnboard);
+  }
+
+  // Control del LED externo (1 Hz)
+  if (tiempoActual - tiempoPrevioExterno >= periodoExterno) {
+    tiempoPrevioExterno = tiempoActual;
+    estadoExterno = (estadoExterno == LOW) ? HIGH : LOW;
+    digitalWrite(PIN_LED_EXTERNO, estadoExterno);
+  }
+}
+
+
+/*Código 4: Encender y apagar el LED con un pulsador*/
+
+#define PIN_LED 12
+#define PIN_PULSADOR 7
+
+void setup() {
+  // Configuramos el LED como salida y el pulsador como entrada
+  pinMode(PIN_LED, OUTPUT);
+  pinMode(PIN_PULSADOR, INPUT);
+}
+
+void loop() {
+  // Si se detecta que el pulsador está presionado (lectura LOW)
+  if (digitalRead(PIN_PULSADOR) == LOW) {
+    digitalWrite(PIN_LED, HIGH);  // Enciende el LED
+  } else {
+    digitalWrite(PIN_LED, LOW);   // Apaga el LED
+  }
+}
+
+
+/*Código 5: Alternar el estado del LED con detección de flanco en el pulsado*/
+
+#define PIN_LED 12
+#define PIN_PULSADOR 7
+
+void setup() {
+  pinMode(PIN_LED, OUTPUT);
+  pinMode(PIN_PULSADOR, INPUT);
+}
+
+void loop() {
+  int valor_ant;              // Variable para almacenar el valor anterior
+  static int valor_act = 0;   // Valor actual (static para conservar entre iteraciones)
+  static int valor_LED = LOW; // Estado actual del LED (static)
+
+  valor_ant = valor_act;                  // Guarda el valor actual como valor antiguo
+  valor_act = digitalRead(PIN_PULSADOR);    // Lee el valor actual del pulsador
+
+  // Detecta flanco de bajada: cambio en el valor y el actual es LOW
+  if ((valor_ant != valor_act) && (valor_act == LOW)) {
+    // Invierte el estado del LED
+    if (valor_LED == LOW) {
+      valor_LED = HIGH;
+      digitalWrite(PIN_LED, HIGH);
+    } else {
+      valor_LED = LOW;
+      digitalWrite(PIN_LED, LOW);
+    }
+  }
+}
+
+
+/*Código 6: Control con dos pulsadores (uno para encender y otro para apagar el LED)*/
+
+#define PIN_LED         12
+#define PIN_PULSADOR1    7   // Pulsador para encender
+#define PIN_PULSADOR2    6   // Pulsador para apagar
+
+// Variable para almacenar el estado del LED y el bloqueo
+int estado_LED = LOW;
+bool bloqueado = false;
+
+// Variables para detección de flanco (se asume configuración con pull-up)
+int prevEstadoPuls1 = HIGH;
+int prevEstadoPuls2 = HIGH;
+
+void setup() {
+  pinMode(PIN_LED, OUTPUT);
+  pinMode(PIN_PULSADOR1, INPUT); // Se asume el uso de resistencias pull-up
+  pinMode(PIN_PULSADOR2, INPUT);
+}
+
+void loop() {
+  int lecturaPuls1 = digitalRead(PIN_PULSADOR1);
+  int lecturaPuls2 = digitalRead(PIN_PULSADOR2);
+  
+  // Detectar flanco de bajada en pulsador 2 para apagar el LED y bloquearlo
+  if (prevEstadoPuls2 == HIGH && lecturaPuls2 == LOW) {
+    estado_LED = LOW;
+    bloqueado = true;
+    digitalWrite(PIN_LED, estado_LED);
+  }
+  
+  // Detectar flanco de bajada en pulsador 1 para intentar encender el LED
+  if (prevEstadoPuls1 == HIGH && lecturaPuls1 == LOW) {
+    // Solo se enciende el LED si aún no está bloqueado
+    if (!bloqueado) {
+      estado_LED = HIGH;
+      digitalWrite(PIN_LED, estado_LED);
+    }
+  }
+  
+  // Actualización de estados previos
+  prevEstadoPuls1 = lecturaPuls1;
+  prevEstadoPuls2 = lecturaPuls2;
+  
+  // Nota: Se puede definir una condición para desbloquear el LED si es necesario.
+}
