@@ -144,6 +144,10 @@ bool bloqueado = false;
 int prevEstadoPuls1 = HIGH;
 int prevEstadoPuls2 = HIGH;
 
+// Variables para el desbloqueo: si ningún pulsador se pulsa durante 2000 ms, se desbloquea
+unsigned long tiempoAmbosNoPulsados = 0;
+const unsigned long T_DESBLOQUEO = 2000; // 2 segundos
+
 void setup() {
   pinMode(PIN_LED, OUTPUT);
   pinMode(PIN_PULSADOR1, INPUT); // Se asume el uso de resistencias pull-up
@@ -174,5 +178,16 @@ void loop() {
   prevEstadoPuls1 = lecturaPuls1;
   prevEstadoPuls2 = lecturaPuls2;
   
-  // Nota: Se puede definir una condición para desbloquear el LED si es necesario.
+  // Condición para desbloquear el LED:
+  // Si ambos pulsadores no se pulsan (estado HIGH) durante 2 segundos, se desbloquea.
+  if (lecturaPuls1 == HIGH && lecturaPuls2 == HIGH) {
+    if (tiempoAmbosNoPulsados == 0) {
+      tiempoAmbosNoPulsados = millis();
+    } else if (millis() - tiempoAmbosNoPulsados >= T_DESBLOQUEO) {
+      bloqueado = false;
+    }
+  } else {
+    // Si se pulsa alguno, se resetea el contador
+    tiempoAmbosNoPulsados = 0;
+  }
 }
